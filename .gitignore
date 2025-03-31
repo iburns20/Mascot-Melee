@@ -1,0 +1,18 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# === Conda virtual environment ===
+venv/
+
+# === VS Code settings (optional but common) ===
+.vscode/
+
+# === Environment variables / secrets ===
+.env
+
+# === OS-specific ===
+.DS_Store
+Thumbs.db
