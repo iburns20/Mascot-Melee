@@ -15,59 +15,69 @@ dt = 0
 gravity = 800
 jump_strength = -500  # Jumping velocity
 
-heart_image = pygame.image.load("heart.png")
+heart_image = pygame.image.load("img/heart.png")
 heart_image = pygame.transform.scale(heart_image, (50, 50))  # Adjust size if needed
+smash_font = pygame.font.Font("img/super_smash_4_1_by_pokemon_diamond-d7zxu6d.ttf", 36)
+tag_font = pygame.font.Font("img/df-gothic-eb.ttf", 18)  # adjust size as needed
+melee_effect_img = pygame.image.load("img/attack.png").convert_alpha()
+
+
+
 
 character_options = [
     {
-        "image": pygame.image.load("player1_resized.png"),
-        "size": (60, 120)  # Width, height for in-game use
+        "name": "Smokey",
+        "select_image": pygame.image.load("img/player1.png"),
+        "game_image": pygame.transform.scale(pygame.image.load("img/player1.png"), (68, 130)),
+        "size": (60, 120)
     },
     {
-        "image": pygame.image.load("player2_resized.gif"),
+        "name": "Hairy Dawg",
+        "select_image": pygame.image.load("img/player2.1.gif"),
+        "game_image": pygame.transform.scale(pygame.image.load("img/player2.1.gif"), (65, 125)),
         "size": (45, 90)
     },
-    # Add more if needed
+    {
+        "name": "Big Al",
+        "select_image": pygame.image.load("img/big_al.png"),
+        "game_image": pygame.transform.scale(pygame.image.load("img/big_al.png"), (90, 130)),  # adjust size as needed
+        "size": (90, 130)
+    },
+    {
+        "name": "Albert",
+        "select_image": pygame.image.load("img/Albert_gator.png"),
+        "game_image": pygame.transform.scale(pygame.image.load("img/Albert_gator.png"), (70, 130)),  # adjust size as needed
+        "size": (70, 130)
+    }
+
+    # Add more if needed!
 ]
+
 
 
 def push_off_field_layout(sw, sh):
     return [pygame.Rect(0, int(sh * 0.78), sw, 20)]
-
 def classic_arena_layout(sw, sh):
-    return [pygame.Rect(int(sw * 0.25), int(sh * 0.56), int(sw * 0.48), 20)]
+    return [pygame.Rect(int(sw * 0.25), int(sh * 0.6), int(sw * 0.48), 20)]
 
 maps = [
     {
         "name": "The Field",
-        "background": "background.jpg",
+        "background": "img/background.jpg",
         "get_platforms": push_off_field_layout,
         "platform_image": None
     },
     {
         "name": "Final Destination",
-        "background": "Final-Destination-Stage3.jpg",
+        "background": "img/Final-Destination-Stage3.jpg",
         "get_platforms": classic_arena_layout,
         "platform_image": None
     }
 ]
 
-
-player1_image = pygame.image.load('player1.png')
-player2_image = pygame.image.load('player2.1.gif')
-
-# Resize images
-
-
-player1_image = pygame.transform.scale(player1_image, (60, 120))  # Resize to 50x100 pixels
-player2_image = pygame.transform.scale(player2_image, (60, 120))  # Resize to 50x100 pixels
-#background_image = pygame.transform.scale(background_image, (1280, 720))
-
-character_options = [player1_image, player2_image]
-
 def show_start_screen():
-    screen_width = screen.get_width()
-    screen_height = screen.get_height()
+    title_image = pygame.image.load("img/MascotMeleeTitle.png")
+    title_image = pygame.transform.scale(title_image, (screen.get_width(), screen.get_height()))
 
     start_screen = True
     while start_screen:
@@ -78,86 +88,125 @@ def show_start_screen():
             if event.type == pygame.KEYDOWN:
                 start_screen = False
 
-        screen.fill((0, 0, 0))  # Fill the screen with black
-        font = pygame.font.Font(None, 74)
-        text = font.render("Press any key to start", True, (255, 255, 255))
-        text_rect = text.get_rect(center=(screen_width // 2, screen_height // 2))
-        screen.blit(text, text_rect)
+        screen.blit(title_image, (0, 0))
         pygame.display.flip()
         clock.tick(60)
 
 def character_select():
-    selected1 = False
-    selected2 = False
-    screen_width = screen.get_width()
-    screen_height = screen.get_height()
+    selected_p1 = 0
+    selected_p2 = 1
+    # Add this near the top of the function (outside the loop)
+    confirmed_p1 = False
+    confirmed_p2 = False
+    clock = pygame.time.Clock()
+    font = smash_font
+    
+    running = True
+    while running:
+        screen.fill((30,30,30))
+        screen_width, screen_height = screen.get_size()
 
-    cols = len(character_options)
-    rows = 1
-    box_width = int(screen_width * 0.12)
-    box_height = int(screen_height * 0.30)
-    box_spacing = int(screen_width * 0.04)
-    start_x = int((screen_width - (cols * (box_width + box_spacing) - box_spacing)) // 2)
-    start_y = int(screen_height * 0.4)
+        # ========== Top Character Row ==========
+        row_height = screen_height // 2
+        box_width = 120
+        box_height = 180
+        spacing = 100
+        row_y = row_height // 2 - box_height // 2
 
-    # Each player's cursor position (index in list/grid)
-    p1_pos = 0
-    p2_pos = cols - 1
+        for i, char in enumerate(character_options):
+            x = spacing + i * (box_width + spacing)
+            rect = pygame.Rect(x, row_y, box_width, box_height)
 
-    font = pygame.font.Font(None, int(screen_height * 0.06))
+            if i == selected_p1:
+                pygame.draw.rect(screen, "blue", rect, 4)
+            elif i == selected_p2:
+                pygame.draw.rect(screen, "green", rect, 4)
+            else:
+                pygame.draw.rect(screen, "white", rect, 2)
 
-    while not (selected1 and selected2):
-        screen.fill((50, 50, 50))
-        screen_width = screen.get_width()
-        screen_height = screen.get_height()
+            portrait = pygame.transform.scale(char["select_image"], (box_width - 10, box_height - 10))
+            screen.blit(portrait, (x + 5, row_y + 5))
 
-        for i in range(len(character_options)):
-            x = start_x + i * (box_width + box_spacing)
-            y = start_y
+        # ========== Bottom Preview Boxes ==========
+        preview_width = 170
+        preview_height = 280
+        preview_y = screen_height * 3 // 4 - preview_height // 2
+        preview_spacing = screen_width // 4
 
-            # Draw character box
-            pygame.draw.rect(screen, (200, 200, 200), (x, y, box_width, box_height), 3)
+        # Player 1 preview
+        preview1_rect = pygame.Rect(preview_spacing - preview_width // 2, preview_y, preview_width, preview_height)
+        pygame.draw.rect(screen, "blue", preview1_rect, 4)
+        p1_preview_img = pygame.transform.scale(character_options[selected_p1]["select_image"], (preview_width - 10, preview_height - 10))
+        screen.blit(p1_preview_img, (preview1_rect.x + 5, preview1_rect.y + 5))
+        p1_name = character_options[selected_p1]["name"]
+        name_surface1 = smash_font.render(p1_name, True, "white")
+        name_rect1 = name_surface1.get_rect(center=(preview1_rect.centerx, preview1_rect.bottom + 25))
+        screen.blit(name_surface1, name_rect1)
 
-            # Highlight for Player 1
-            if i == p1_pos and not selected1:
-                pygame.draw.rect(screen, (255, 0, 0), (x - 4, y - 4, box_width + 8, box_height + 8), 4)
 
-            # Highlight for Player 2
-            if i == p2_pos and not selected2:
-                pygame.draw.rect(screen, (0, 0, 255), (x - 4, y - 4, box_width + 8, box_height + 8), 4)
 
-            # Draw the character sprite
-            img = pygame.transform.scale(character_options[i], (box_width - 20, box_height - 20))
-            screen.blit(img, (x + 10, y + 10))
+        # Player 2 preview
+        preview2_rect = pygame.Rect(screen_width - preview_spacing - preview_width // 2, preview_y, preview_width, preview_height)
+        pygame.draw.rect(screen, "green", preview2_rect, 4)
+        p2_preview_img = pygame.transform.scale(character_options[selected_p2]["select_image"], (preview_width - 10, preview_height - 10))
+        screen.blit(p2_preview_img, (preview2_rect.x + 5, preview2_rect.y + 5))
+        p2_name = character_options[selected_p2]["name"]
+        name_surface2 = smash_font.render(p2_name, True, "white")
+        name_rect2 = name_surface2.get_rect(center=(preview2_rect.centerx, preview2_rect.bottom + 25))
+        screen.blit(name_surface2, name_rect2)
 
-        pygame.display.flip()
 
+        # Handle inputs
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
-            elif event.type == pygame.KEYDOWN:
-                # Player 1 movement
-                if not selected1:
+
+            if event.type == pygame.KEYDOWN:
+                # Player 1 input
+                if not confirmed_p1:
                     if event.key == pygame.K_a:
-                        p1_pos = (p1_pos - 1) % cols
-                    elif event.key == pygame.K_d:
-                        p1_pos = (p1_pos + 1) % cols
-                    elif event.key in (pygame.K_1, pygame.K_2, pygame.K_3):
-                        selected1 = True
+                        next_index = (selected_p1 - 1) % len(character_options)
+                        while next_index == selected_p2:
+                            next_index = (next_index - 1) % len(character_options)
+                        selected_p1 = next_index
 
-                # Player 2 movement
-                if not selected2:
+                    if event.key == pygame.K_d:
+                        next_index = (selected_p1 + 1) % len(character_options)
+                        while next_index == selected_p2:
+                            next_index = (next_index + 1) % len(character_options)
+                        selected_p1 = next_index
+
+                    if event.key in [pygame.K_1, pygame.K_2, pygame.K_3]:
+                        confirmed_p1 = True
+
+                # Player 2 input
+                if not confirmed_p2:
                     if event.key == pygame.K_LEFT:
-                        p2_pos = (p2_pos - 1) % cols
-                    elif event.key == pygame.K_RIGHT:
-                        p2_pos = (p2_pos + 1) % cols
-                    elif event.key in (pygame.K_8, pygame.K_9, pygame.K_0):
-                        selected2 = True
+                        next_index = (selected_p2 - 1) % len(character_options)
+                        while next_index == selected_p1:
+                            next_index = (next_index - 1) % len(character_options)
+                        selected_p2 = next_index
 
+                    if event.key == pygame.K_RIGHT:
+                        next_index = (selected_p2 + 1) % len(character_options)
+                        while next_index == selected_p1:
+                            next_index = (next_index + 1) % len(character_options)
+                        selected_p2 = next_index
+
+                    if event.key in [pygame.K_8, pygame.K_9, pygame.K_0]:
+                        confirmed_p2 = True
+
+
+
+                # When both players have confirmed, return their characters
+                if confirmed_p1 and confirmed_p2:
+                    return character_options[selected_p1]["game_image"], character_options[selected_p2]["game_image"]
+
+
+        pygame.display.flip()
         clock.tick(60)
 
-    return character_options[p1_pos], character_options[p2_pos]
 
 class Projectile:
     def __init__(self, x, y, speed, color):
@@ -184,7 +233,7 @@ def map_select():
 
 
         screen.fill((30, 30, 30))
-        font = pygame.font.Font(None, 60)
+        font = smash_font
         title = font.render("Choose Your Map", True, (255, 255, 255))
         screen.blit(title, (int(screen_width * 0.38), int(screen_height * 0.07)))
 
@@ -202,7 +251,7 @@ def map_select():
                     selected = (selected - 1) % len(maps)
                 elif event.key == pygame.K_DOWN:
                     selected = (selected + 1) % len(maps)
-                elif event.key == pygame.K_RETURN:
+                elif event.key == (pygame.K_1 or pygame.K_2 or pygame.K_3 or pygame.K_8 or pygame.K_9 or pygame.K_0):
                     choosing = False
 
         pygame.display.flip()
@@ -212,13 +261,24 @@ def map_select():
 
 
 class Player:
-    def __init__(self, x, y, image):
+    def __init__(self, x, y, image, player_tag):
         self.pos = pygame.Vector2(x, y)
         self.velocity = pygame.Vector2(0, 0)
         self.image = image
         self.on_ground = False
         self.lives = 3
-        self.rect = pygame.Rect(x - 20, y - 40, 40, 80)  # Rectangle hitbox
+        image_width = self.image.get_width()
+        image_height = self.image.get_height()
+        self.hitbox_offset_x = 8  # Adjust this to nudge hitbox right
+        hitbox_width = int(image_width * 0.6)   # adjust as needed
+        hitbox_height = int(image_height * 0.9)
+        self.player_tag = player_tag
+
+        # Centered horizontally, anchored at feet
+        hitbox_x = x - hitbox_width // 2
+        hitbox_y = y - hitbox_height
+
+        self.rect = pygame.Rect(hitbox_x, hitbox_y, hitbox_width, hitbox_height)
         self.facing_right = True
         self.attack_cooldown = 0.5  # Cooldown in seconds
         self.last_attack_time = 0   # Timestamp of last attack
@@ -236,7 +296,10 @@ class Player:
 
         # Prevent only horizontal movement while shielding, but allow falling
         if self.attack_mode == "shield" and self.is_shielding:
-            self.rect.topleft = (self.pos.x - 20, self.pos.y - 40)
+            self.rect.topleft = (
+                self.pos.x - self.rect.width // 2 ,
+                self.pos.y - self.rect.height
+            )
             return  
 
         # 🔹 Counteract knockback by allowing movement to override it
@@ -260,7 +323,11 @@ class Player:
             self.velocity.y = jump_strength
 
         # Always update rect position
-        self.rect.topleft = (self.pos.x - 20, self.pos.y - 40)
+        self.rect.topleft = (
+            self.pos.x - self.rect.width // 2 ,
+            self.pos.y - self.rect.height
+        )
+
 
     
     def apply_gravity(self):
@@ -281,62 +348,123 @@ class Player:
             if self.rect.colliderect(platform):
                 self.on_ground = True
                 self.velocity.y = 0
-                self.pos.y = platform.top - 40
-                self.rect.topleft = (self.pos.x - 20, self.pos.y - 40)
+                self.pos.y = platform.top
+                self.rect.topleft = (
+                    self.pos.x - self.rect.width // 2 ,
+                    self.pos.y - self.rect.height
+                )
                 break
         if self.on_ground:
             self.velocity.y = 0
 
     def check_player_collision(self, other):
         if self.rect.colliderect(other.rect):
+            dx = self.rect.centerx - other.rect.centerx
+            dy = self.rect.centery - other.rect.centery
+
             overlap_x = min(self.rect.right - other.rect.left, other.rect.right - self.rect.left)
             overlap_y = min(self.rect.bottom - other.rect.top, other.rect.bottom - self.rect.top)
+
+            # Resolve the shallower overlap
             if overlap_x < overlap_y:
-                if self.pos.x < other.pos.x:
-                    self.pos.x -= overlap_x / 2
-                    other.pos.x += overlap_x / 2
+                push_amount = max(overlap_x / 2, 1)  # Prevent micro-jitter
+
+                if dx > 0:
+                    self.pos.x += push_amount
+                    other.pos.x -= push_amount
                 else:
-                    self.pos.x += overlap_x / 2
-                    other.pos.x -= overlap_x / 2
+                    self.pos.x -= push_amount
+                    other.pos.x += push_amount
             else:
-                if self.pos.y < other.pos.y:
-                    self.pos.y -= overlap_y / 2
-                    other.pos.y += overlap_y / 2
+                push_amount = max(overlap_y / 2, 1)
+
+                if dy > 0:
+                    self.pos.y += push_amount
+                    other.pos.y -= push_amount
                 else:
-                    self.pos.y += overlap_y / 2
-                    other.pos.y -= overlap_y / 2
-            self.rect.topleft = (self.pos.x - 20, self.pos.y - 40)
-            other.rect.topleft = (other.pos.x - 20, other.pos.y - 40)
+                    self.pos.y -= push_amount
+                    other.pos.y += push_amount
+
+            # Update both players' rects
+            self.rect.topleft = (
+                self.pos.x - self.rect.width // 2 + self.hitbox_offset_x,
+                self.pos.y - self.rect.height
+            )
+
+            other.rect.topleft = (
+                other.pos.x - other.rect.width // 2 + other.hitbox_offset_x,
+                other.pos.y - other.rect.height
+            )
+
 
     def check_off_screen(self, screen_width, screen_height):
         if self.pos.x < 0 or self.pos.x > screen_width or self.pos.y > screen_height:
             self.lives -= 1
             self.pos = pygame.Vector2(screen_width / 2, screen_height / 2)
             self.velocity = pygame.Vector2(0, 0)
-            self.rect.topleft = (self.pos.x - 20, self.pos.y - 40)
+            self.rect.topleft = (
+                self.pos.x - self.rect.width // 2 ,
+                self.pos.y - self.rect.height
+            )
+
 
     def apply_knockback(self, direction, strength):
         self.velocity += direction * strength
 
     def draw(self, screen):
         if self.is_shielding:
-            # 🔹 Draw a faint blue circle around the player
-            shield_color = (0, 0, 255, 100)  # RGBA (Blue with transparency)
+            shield_color = (0, 0, 255, 100)
             shield_surface = pygame.Surface((self.rect.width * 2, self.rect.height * 2), pygame.SRCALPHA)
             pygame.draw.circle(shield_surface, shield_color, (self.rect.width, self.rect.height), self.rect.width)
-            screen.blit(shield_surface, (self.rect.centerx - self.rect.width, self.rect.centery - self.rect.height))
 
+            # Get top of the visible sprite
+            image_top = self.rect.bottom - self.image.get_height()
+
+            # Center the shield on the visual character
+            shield_x = self.rect.centerx - self.rect.width + 5  # Shift slightly right
+            shield_y = image_top + self.image.get_height() // 2 - self.rect.height - 5  # Shift slightly up
+
+            screen.blit(shield_surface, (shield_x, shield_y))
+
+
+        blit_x = self.rect.left - self.hitbox_offset_x
+        blit_y = self.rect.bottom - self.image.get_height()
 
         if self.facing_right:
-            screen.blit(self.image, self.rect.topleft)
+            screen.blit(self.image, (blit_x, blit_y))
+
         else:
             flipped_image = pygame.transform.flip(self.image, True, False)
-            screen.blit(flipped_image, self.rect.topleft)
+            
+            screen.blit(flipped_image, (blit_x, blit_y))
+
+        # Floating player label (e.g. "P1" or "P2")
+        tag_surface = tag_font.render(self.player_tag, True, "white")
+        outline_surface = tag_font.render(self.player_tag, True, "black")
+
+
+        # Calculate position above character's image
+        text_x = self.rect.centerx - tag_surface.get_width() // 2
+        text_y = self.rect.top - 30  # Adjust vertical offset as needed
+
+        # Draw outline (8 directions)
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                if dx != 0 or dy != 0:
+                    screen.blit(outline_surface, (text_x + dx, text_y + dy))
+
+        # Draw the main white text
+        screen.blit(tag_surface, (text_x, text_y))
+
+        # Draw hitbox outline for debugging (in red)
+        # pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
+
+
 
 def show_winner_screen(winner):
     """Display the winner screen and wait for player input to restart or quit."""
     screen.fill((0, 0, 0))  # Black background
-    font = pygame.font.Font(None, 74)
+    font = smash_font
     text = font.render(f"{winner} Wins!", True, (255, 255, 255))
     screen.blit(text, (screen.get_width() // 2 - 150, screen.get_height() // 2))
     pygame.display.flip()
@@ -349,6 +477,20 @@ def show_winner_screen(winner):
                 exit()
             if event.type == pygame.KEYDOWN:
                 waiting = False  # Restart the game
+
+def draw_text_with_outline(surface, text, font, x, y, text_color="white", outline_color="black"):
+    text_surface = font.render(text, True, text_color)
+    outline_surface = font.render(text, True, outline_color)
+
+    # Draw outline in 8 directions
+    for dx in [-1, 0, 1]:
+        for dy in [-1, 0, 1]:
+            if dx != 0 or dy != 0:
+                surface.blit(outline_surface, (x + dx, y + dy))
+    
+    # Draw main text in the center
+    surface.blit(text_surface, (x, y))
+
 
 while True:
     # Show the start screen
@@ -378,11 +520,11 @@ while True:
     projectiles = []
 
     # Create players with selected images
-    player1 = Player(screen.get_width() / 2, screen.get_height() / 2, player1_img)
-    player2 = Player(screen.get_width() / 3, screen.get_height() / 2, player2_img)
+    player1 = Player(screen.get_width() / 3, screen.get_height() / 2, player1_img, "P1")
+    player2 = Player(2 * screen.get_width() / 3, screen.get_height() / 2, player2_img, "P2")
 
     # Font setup for displaying lives
-    font = pygame.font.Font(None, 36)
+    font = smash_font
 
     running = True
 
@@ -441,13 +583,25 @@ while True:
         player1.check_off_screen(screen.get_width(), screen.get_height())
         player2.check_off_screen(screen.get_width(), screen.get_height())
 
+        effect_size = 80  # adjust this for how big the visual should be
+        effect_img = pygame.transform.scale(melee_effect_img, (effect_size, effect_size))
+
             # Attack mechanics
         # Player 1 Attack Logic
         if keys[pygame.K_1]:  
             if player1.attack_mode == "melee" and (current_time - player1.last_attack_time) >= player1.attack_cooldown:
                 player1.last_attack_time = current_time
-                attack_box1 = pygame.Rect(player1.pos.x + (30 if player1.facing_right else -30), player1.pos.y - 20, 40, 40)
-                pygame.draw.rect(screen, "blue", attack_box1)  # Debugging display
+                image_top1 = player1.rect.bottom - player1.image.get_height()
+                attack_box1 = pygame.Rect(
+                    player1.rect.centerx + (30 if player1.facing_right else -30),
+                    image_top1 + player1.image.get_height() // 2 - 20,  # Middle of sprite
+                    40, 40
+                )
+
+                effect_x = attack_box1.centerx - effect_size // 2
+                effect_y = attack_box1.centery - effect_size // 2
+                screen.blit(effect_img, (effect_x, effect_y))
+
                 if attack_box1.colliderect(player2.rect) and not player2.is_shielding:
                     direction = pygame.Vector2(1, 0) if player1.facing_right else pygame.Vector2(-1, 0)
                     player2.apply_knockback(direction, 1000)
@@ -456,13 +610,17 @@ while True:
             player1.is_shielding = True  # Activate shield while button is held
 
         elif keys[pygame.K_3] and (current_time - player1.last_attack_time) >= player1.attack_cooldown:
-            player1.last_attack_time = current_time  # Reset cooldown
-            
-            # Determine the projectile's starting position (offset in front of player)
+            player1.last_attack_time = current_time
+
             offset_x = 40 if player1.facing_right else -40  
             projectile_speed = 7 if player1.facing_right else -7  
-            
-            projectiles.append(Projectile(player1.rect.centerx + offset_x, player1.rect.centery, projectile_speed, "blue"))  # Now starts in front of player
+
+            # Align projectile spawn with visual middle of sprite
+            image_top1 = player1.rect.bottom - player1.image.get_height()
+            projectile_y1 = image_top1 + player1.image.get_height() // 2 - 5  # -5 centers 10px tall projectile
+
+            projectiles.append(Projectile(player1.rect.centerx + offset_x, projectile_y1, projectile_speed, "blue"))
+
         else:
             player1.is_shielding = False  # Deactivate shield when attack key is released
 
@@ -470,8 +628,16 @@ while True:
         if keys[pygame.K_8]:  
             if player2.attack_mode == "melee" and (current_time - player2.last_attack_time) >= player2.attack_cooldown:
                 player2.last_attack_time = current_time
-                attack_box2 = pygame.Rect(player2.pos.x + (30 if player2.facing_right else -30), player2.pos.y - 20, 40, 40)
-                pygame.draw.rect(screen, "green", attack_box2)
+                image_top2 = player2.rect.bottom - player2.image.get_height()
+                attack_box2 = pygame.Rect(
+                    player2.rect.centerx + (30 if player2.facing_right else -30),
+                    image_top2 + player2.image.get_height() // 2 - 20,
+                    40, 40
+                )
+                effect_x = attack_box2.centerx - effect_size // 2
+                effect_y = attack_box2.centery - effect_size // 2
+                screen.blit(effect_img, (effect_x, effect_y))
+
                 if attack_box2.colliderect(player1.rect) and not player1.is_shielding:
                     direction = pygame.Vector2(1, 0) if player2.facing_right else pygame.Vector2(-1, 0)
                     player1.apply_knockback(direction, 1200)
@@ -481,11 +647,15 @@ while True:
 
         elif keys[pygame.K_0] and (current_time - player2.last_attack_time) >= player2.attack_cooldown:
             player2.last_attack_time = current_time
-            
+
             offset_x = 40 if player2.facing_right else -40  
             projectile_speed = 7 if player2.facing_right else -7  
-            
-            projectiles.append(Projectile(player2.rect.centerx + offset_x, player2.rect.centery, projectile_speed, "green"))
+
+            image_top2 = player2.rect.bottom - player2.image.get_height()
+            projectile_y2 = image_top2 + player2.image.get_height() // 2 - 5
+
+            projectiles.append(Projectile(player2.rect.centerx + offset_x, projectile_y2, projectile_speed, "green"))
+
         else:
             player2.is_shielding = False  # Deactivate shield when attack key is released
 
@@ -522,6 +692,15 @@ while True:
         # Draw players
         player1.draw(screen)
         player2.draw(screen)
+
+        # Draw Player 1 label (above hearts, bottom-left)
+        draw_text_with_outline(screen, "Player 1", font, 20, screen.get_height() - 90)
+
+        p2_text = "Player 2"
+        p2_rect = font.render(p2_text, True, "white").get_rect()
+        p2_x = screen.get_width() - 180 + (player2.lives * 50 - p2_rect.width) // 2
+        draw_text_with_outline(screen, p2_text, font, p2_x, screen.get_height() - 90)
+
 
         # Player 1 hearts (bottom-left)
         for i in range(player1.lives):
