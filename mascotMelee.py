@@ -17,6 +17,8 @@ jump_strength = -500  # Jumping velocity
 
 heart_image = pygame.image.load("img/heart.png")
 heart_image = pygame.transform.scale(heart_image, (50, 50))  # Adjust size if needed
+football_image = pygame.image.load("img/football.png")  # Load the football image
+football_image = pygame.transform.scale(football_image, (50, 30))  # Resize to fit your needs
 smash_font = pygame.font.Font("img/super_smash_4_1_by_pokemon_diamond-d7zxu6d.ttf", 36)
 smash_font2 = pygame.font.Font("img/super_smash_4_1_by_pokemon_diamond-d7zxu6d.ttf", 16)
 smash_font3 = pygame.font.Font("img/super_smash_4_1_by_pokemon_diamond-d7zxu6d.ttf", 22)
@@ -213,13 +215,13 @@ def character_select():
 
                 # Player 2 input
                 if not confirmed_p2:
-                    if event.key == pygame.K_LEFT:
+                    if event.key == pygame.K_j:
                         next_index = (selected_p2 - 1) % len(character_options)
                         while next_index == selected_p1:
                             next_index = (next_index - 1) % len(character_options)
                         selected_p2 = next_index
 
-                    if event.key == pygame.K_RIGHT:
+                    if event.key == pygame.K_l:
                         next_index = (selected_p2 + 1) % len(character_options)
                         while next_index == selected_p1:
                             next_index = (next_index + 1) % len(character_options)
@@ -241,15 +243,21 @@ def character_select():
 
 class Projectile:
     def __init__(self, x, y, speed, color):
-        self.rect = pygame.Rect(x, y, 20, 10)  # Small rectangle projectile
-        self.speed = speed  # Speed in pixels per frame
-        self.color = color  # Color of projectile
+        self.rect = pygame.Rect(x, y, 50, 30)  # Set to the proper size for the football image
+        self.speed = speed
+        self.color = color
+        self.image = football_image
 
     def move(self):
         self.rect.x += self.speed
 
     def draw(self, screen):
-        pygame.draw.rect(screen, self.color, self.rect)
+        if self.rect.x >= 0 and self.rect.x <= screen.get_width():  # Only draw if it's on screen
+            screen.blit(self.image, self.rect.topleft)
+
+    def off_screen(self, screen_width, screen_height):
+        return self.rect.x < 0 or self.rect.x > screen_width or self.rect.y < 0 or self.rect.y > screen_height
+
 
 
 def map_select():
@@ -298,9 +306,9 @@ def map_select():
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
+                if event.key == pygame.K_j:
                     selected = (selected - 1) % len(maps)
-                elif event.key == pygame.K_RIGHT:
+                elif event.key == pygame.K_l:
                     selected = (selected + 1) % len(maps)
                 elif event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_8, pygame.K_9, pygame.K_0]:
                     choosing = False
@@ -331,8 +339,10 @@ class Player:
 
         self.rect = pygame.Rect(hitbox_x, hitbox_y, hitbox_width, hitbox_height)
         self.facing_right = True
-        self.attack_cooldown = 0.5  # Cooldown in seconds
-        self.last_attack_time = 0   # Timestamp of last attack
+        self.attack_cooldown_melee = 0.5  # Cooldown for melee attacks in seconds
+        self.attack_cooldown_projectile = 1  # Cooldown for projectile attacks in seconds
+        self.last_attack_time_melee = 0   # Timestamp of last melee attack
+        self.last_attack_time_projectile = 0   # Timestamp of last projectile attack
         self.attack_mode = "melee"  # Default attack mode
         self.is_shielding = False  # Track shield status
 
@@ -379,19 +389,16 @@ class Player:
             self.pos.y - self.rect.height
         )
 
-
-    
     def apply_gravity(self):
         """Applies gravity and friction to stop infinite knockback."""
-        self.velocity.y += gravity * dt  # ✅ Apply gravity normally
+        self.velocity.y += gravity * dt  # Apply gravity normally
 
         #  Apply friction to slow down horizontal movement
-        friction = 0.97  # Adjust to fine-tune stopping speed
-        self.velocity.x *= friction  # ✅ This gradually reduces velocity
+        friction = 0.96  # Adjust to fine-tune stopping speed
+        self.velocity.x *= friction  # This gradually reduces velocity
 
         # Move the player based on velocity
-        self.pos += self.velocity * dt  
-
+        self.pos += self.velocity * dt
 
     def check_collision(self, platforms):
         self.on_ground = False
@@ -447,7 +454,6 @@ class Player:
                 other.pos.y - other.rect.height
             )
 
-
     def check_off_screen(self, screen_width, screen_height):
         if self.pos.x < 0 or self.pos.x > screen_width or self.pos.y > screen_height:
             self.lives -= 1
@@ -457,7 +463,6 @@ class Player:
                 self.pos.x - self.rect.width // 2 ,
                 self.pos.y - self.rect.height
             )
-
 
     def apply_knockback(self, direction, strength):
         self.velocity += direction * strength
@@ -480,9 +485,7 @@ class Player:
             shield_x = self.rect.centerx - center_x
             shield_y = self.rect.centery - center_y
 
-
             screen.blit(shield_surface, (shield_x, shield_y))
-
 
         blit_x = self.rect.left - self.hitbox_offset_x
         blit_y = self.rect.bottom - self.image.get_height()
@@ -492,13 +495,11 @@ class Player:
 
         else:
             flipped_image = pygame.transform.flip(self.image, True, False)
-            
             screen.blit(flipped_image, (blit_x, blit_y))
 
         # Floating player label (e.g. "P1" or "P2")
         tag_surface = tag_font.render(self.player_tag, True, "white")
         outline_surface = tag_font.render(self.player_tag, True, "black")
-
 
         # Calculate position above character's image
         text_x = self.rect.centerx - tag_surface.get_width() // 2
@@ -513,8 +514,11 @@ class Player:
         # Draw the main white text
         screen.blit(tag_surface, (text_x, text_y))
 
-        # Draw hitbox outline for debugging (in red)
-        # pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
+    def reset_attack_cooldowns(self):
+        """Reset cooldowns after each attack cycle."""
+        self.last_attack_time_melee = 0
+        self.last_attack_time_projectile = 0
+
 
 
 
@@ -643,7 +647,7 @@ while True:
 
         # Move players
         player1.move(keys, pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_1, pygame.K_2, pygame.K_3)
-        player2.move(keys, pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_8, pygame.K_9, pygame.K_0)
+        player2.move(keys, pygame.K_j, pygame.K_l, pygame.K_i, pygame.K_8, pygame.K_9, pygame.K_0)
 
 
         # Apply gravity
@@ -668,8 +672,8 @@ while True:
             # Attack mechanics
         # Player 1 Attack Logic
         if keys[pygame.K_1]:  
-            if player1.attack_mode == "melee" and (current_time - player1.last_attack_time) >= player1.attack_cooldown:
-                player1.last_attack_time = current_time
+            if player1.attack_mode == "melee" and (current_time - player1.last_attack_time_melee) >= player1.attack_cooldown_melee:
+                player1.last_attack_time_melee = current_time
                 image_top1 = player1.rect.bottom - player1.image.get_height()
                 attack_box1 = pygame.Rect(
                     player1.rect.centerx + (30 if player1.facing_right else -30),
@@ -693,10 +697,10 @@ while True:
         elif keys[pygame.K_2]:
             player1.is_shielding = True  # Activate shield while button is held
 
-        elif keys[pygame.K_3] and (current_time - player1.last_attack_time) >= player1.attack_cooldown:
-            player1.last_attack_time = current_time
+        elif keys[pygame.K_3] and (current_time - player1.last_attack_time_projectile) >= player1.attack_cooldown_projectile:
+            player1.last_attack_time_projectile = current_time
 
-            offset_x = 40 if player1.facing_right else -40  
+            offset_x = 20 if player1.facing_right else -67  
             projectile_speed = 7 if player1.facing_right else -7  
 
             # Align projectile spawn with visual middle of sprite
@@ -710,8 +714,8 @@ while True:
 
         # Player 2 Attack Logic
         if keys[pygame.K_8]:  
-            if player2.attack_mode == "melee" and (current_time - player2.last_attack_time) >= player2.attack_cooldown:
-                player2.last_attack_time = current_time
+            if player2.attack_mode == "melee" and (current_time - player2.last_attack_time_melee) >= player2.attack_cooldown_melee:
+                player2.last_attack_time_melee = current_time
                 image_top2 = player2.rect.bottom - player2.image.get_height()
                 attack_box2 = pygame.Rect(
                     player2.rect.centerx + (30 if player2.facing_right else -30),
@@ -733,10 +737,10 @@ while True:
         elif keys[pygame.K_9]:
             player2.is_shielding = True
 
-        elif keys[pygame.K_0] and (current_time - player2.last_attack_time) >= player2.attack_cooldown:
-            player2.last_attack_time = current_time
+        elif keys[pygame.K_0] and (current_time - player2.last_attack_time_projectile) >= player2.attack_cooldown_projectile:
+            player2.last_attack_time_projectile = current_time
 
-            offset_x = 40 if player2.facing_right else -40  
+            offset_x = 20 if player2.facing_right else -67  
             projectile_speed = 7 if player2.facing_right else -7  
 
             image_top2 = player2.rect.bottom - player2.image.get_height()
