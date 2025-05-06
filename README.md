@@ -41,13 +41,13 @@ Mascot Melee is a 2D local multiplayer platform fighter built with Pygame. Playe
    cd mascot-melee
    ```
 2. Install dependencies:
-  ```bash
-  pip install pygame
-  ```
+   ```bash
+   pip install pygame
+   ```
 3. Run the game:
-  ```bash
-  python main.py
-  ```
+   ```bash
+   python main.py
+   ```
 
 ## Assets
 
